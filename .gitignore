@@ -1,0 +1,36 @@
+# AI assistant docs
+AGENTS.md
+CLAUDE.md
+
+# Environment files
+.env
+.env.*
+
+# Build outputs
+backend/target/
+frontend/dist/
+frontend/node_modules/
+
+# Temp files
+*.tmp
+*.log
+nul
+cargo_tmp.txt
+
+# Backup/old folders
+webapp-frontend-backup/
+webapp-frontend/
+Page/
+
+# Archives
+*.zip
+
+# Images/screenshots
+*.png
+*.jpg
+*.jpeg
+
+# IDE
+.idea/
+.vscode/
+*.swp
