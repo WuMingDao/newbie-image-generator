@@ -47,7 +47,7 @@ interface GenerationParams {
 }
 
 const DEFAULT_NEGATIVE_PROMPT =
-  "low quality, blurry, distorted, deformed, ugly, bad anatomy";
+  "low_score_rate, worst quality, low quality, bad quality, lowres, low res, pixelated, blurry, blurred, compression artifacts, jpeg artifacts, bad anatomy, worst hands, deformed hands, deformed fingers, deformed feet, deformed toes, extra limbs, extra arms, extra legs, extra fingers, extra digits, extra digit, fused fingers, missing limbs, missing arms, missing fingers, missing toes, wrong hands, ugly hands, ugly fingers, twisted hands, flexible deformity, conjoined, disembodied, text, watermark, signature, logo, ugly, worst, very displeasing, displeasing, error, doesnotexist, unfinished, poorly drawn face, poorly drawn hands, poorly drawn feet, artistic error, bad proportions, bad perspective, out of frame, ai-generated, ai-assisted, stable diffusion, overly saturated, overly vivid, cross-eye, expressionless, scan, sketch, monochrome, simple background, abstract, sequence, lineup, 2koma, 4koma, microsoft paint \\(medium\\), artifacts, adversarial noise, has bad revision, resized, image sample, low_aesthetic";
 
 const DEFAULT_SYSTEM_PROMPT =
   "You are the greatest anime artist in the entire universe. Your figures are always clear, especially in facial detail. Your compositions always adhere to the golden ratio. Your perspectives are perfectly chosen. The scenes in your works always fit the setting. Your lighting is particularly atmospheric.Now draw a picture based on the prompts below.You are an assistant designed to generate anime images based on xml format textual prompts.";
@@ -266,7 +266,7 @@ export function ImageGenerator() {
         {/* System Prompt 折叠区域 */}
         <Card>
           <CardHeader
-            className="cursor-pointer"
+            className="py-3 cursor-pointer"
             onClick={() => setSystemPromptOpen(!systemPromptOpen)}
           >
             <div className="flex items-center justify-between">
@@ -279,7 +279,7 @@ export function ImageGenerator() {
             </div>
           </CardHeader>
           {systemPromptOpen && (
-            <CardContent>
+            <CardContent className="pt-0">
               <Textarea
                 value={systemPrompt}
                 onChange={(e) => setSystemPrompt(e.target.value)}
@@ -323,7 +323,7 @@ export function ImageGenerator() {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <div>
+              <div className="space-y-1">
                 <CardTitle className="flex items-center gap-2">
                   Prompt
                 </CardTitle>
@@ -413,8 +413,10 @@ export function ImageGenerator() {
 
             <Separator />
 
-            <div className="space-y-2">
-              <Label>Negative Prompt</Label>
+            <details className="space-y-2">
+              <summary className="cursor-pointer text-sm font-medium">
+                Negative Prompt
+              </summary>
               <Textarea
                 placeholder="Things to avoid in the image"
                 value={params.negativePrompt}
@@ -422,9 +424,9 @@ export function ImageGenerator() {
                   setParams({ ...params, negativePrompt: e.target.value })
                 }
                 rows={3}
-                className="resize-none"
+                className="resize-none mt-2"
               />
-            </div>
+            </details>
           </CardContent>
         </Card>
 
@@ -469,8 +471,8 @@ export function ImageGenerator() {
 
             <Separator />
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
+            <div className="flex items-end gap-2">
+              <div className="flex-1 space-y-2">
                 <Label>Width</Label>
                 <Input
                   type="number"
@@ -486,7 +488,20 @@ export function ImageGenerator() {
                   step={64}
                 />
               </div>
-              <div className="space-y-2">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() =>
+                  setParams({
+                    ...params,
+                    width: params.height,
+                    height: params.width,
+                  })
+                }
+              >
+                ⇄
+              </Button>
+              <div className="flex-1 space-y-2">
                 <Label>Height</Label>
                 <Input
                   type="number"

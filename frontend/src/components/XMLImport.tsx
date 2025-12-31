@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 
 interface Character {
   id: number;
@@ -131,15 +132,20 @@ export function XMLImport({ onImport }: XMLImportProps) {
   return (
     <Card>
       <CardHeader
-        className="pb-2 cursor-pointer"
+        className="py-3 cursor-pointer"
         onClick={() => setIsOpen(!isOpen)}
       >
-        <CardTitle className="text-sm flex items-center gap-2">
-          {isOpen ? "▼" : "▶"} 导入 XML Prompt
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-sm flex items-center gap-2">
+            {isOpen ? "▼" : "▶"} 导入 XML Prompt
+          </CardTitle>
+          <Badge variant="outline" className="text-xs">
+            {isOpen ? "点击收起" : "点击展开"}
+          </Badge>
+        </div>
       </CardHeader>
       {isOpen && (
-        <CardContent className="space-y-3">
+        <CardContent className="pt-0 space-y-3">
           <Textarea
             value={importText}
             onChange={(e) => setImportText(e.target.value)}
