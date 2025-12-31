@@ -137,7 +137,7 @@ export function GeneratedImages({
 
         {/* Current image info */}
         {currentImage && !previewImage && (
-          <div className="shrink-0 text-sm text-muted-foreground">
+          <div className="shrink-0 text-sm text-muted-foreground text-right">
             {currentImage.filename} • #{images.length - selectedIndex}
           </div>
         )}

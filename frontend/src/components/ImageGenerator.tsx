@@ -260,9 +260,9 @@ export function ImageGenerator() {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 h-full pb-20 lg:pb-0">
       {/* Left control panel */}
-      <div className="lg:col-span-1 space-y-4 overflow-y-auto">
+      <div className="lg:col-span-1 space-y-3 sm:space-y-4 overflow-y-auto">
         {/* System Prompt 折叠区域 */}
         <Card>
           <CardHeader
@@ -661,9 +661,9 @@ export function ImageGenerator() {
         </Card>
 
         {/* Generate / Interrupt button - 悬浮按钮 */}
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex gap-2">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex gap-2 px-4 w-full sm:w-auto justify-center">
           <Button
-            className="shadow-lg px-8"
+            className="shadow-lg px-4 sm:px-8 flex-1 sm:flex-none"
             size="lg"
             onClick={handleGenerate}
             disabled={
@@ -684,7 +684,7 @@ export function ImageGenerator() {
                 </span>
               </>
             ) : (
-              "Generate Image"
+              "Generate"
             )}
           </Button>
           {isGenerating && (
