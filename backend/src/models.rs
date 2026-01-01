@@ -312,6 +312,7 @@ pub struct ImageResult {
 pub struct AvailableModels {
     pub unet: Vec<String>,
     pub clip: Vec<String>,
+    pub vae: Vec<String>,
 }
 
 /// Find a model file by keywords (tries each in order, case-insensitive)

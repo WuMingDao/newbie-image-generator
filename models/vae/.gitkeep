@@ -1,0 +1,6 @@
+# VAE Model
+# 请将以下模型文件放入此文件夹：
+
+# newbie-image.safetensors (下载后请重命名)
+#    下载: https://hf-mirror.com/NewBie-AI/NewBie-image-Exp0.1/resolve/main/vae/diffusion_pytorch_model.safetensors
+#    重命名为: newbie-image.safetensors

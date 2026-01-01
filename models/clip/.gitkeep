@@ -1,0 +1,8 @@
+# CLIP Models
+# 请将以下模型文件放入此文件夹：
+
+# 1. gemma3-4b-it.safetensors (Text Encoder)
+#    下载: https://hf-mirror.com/NewBie-AI/NewBie-image-Exp0.1/resolve/main/text_encoder/gemma3-4b-it.safetensors
+
+# 2. jina-clip-v2.safetensors (CLIP Model)
+#    下载: https://hf-mirror.com/NewBie-AI/NewBie-image-Exp0.1/resolve/main/clip_model/jina-clip-v2.safetensors

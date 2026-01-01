@@ -289,6 +289,21 @@ impl ComfyUIClient {
                 .collect();
         }
 
+        // Get VAE models
+        if let Some(vae_list) = info
+            .get("VAELoader")
+            .and_then(|v| v.get("input"))
+            .and_then(|v| v.get("required"))
+            .and_then(|v| v.get("vae_name"))
+            .and_then(|v| v.get(0))
+            .and_then(|v| v.as_array())
+        {
+            models.vae = vae_list
+                .iter()
+                .filter_map(|v| v.as_str().map(String::from))
+                .collect();
+        }
+
         Ok(models)
     }
 
@@ -310,6 +325,8 @@ impl ComfyUIClient {
         .unwrap_or_else(|| "gemma3-4b-it.safetensors".to_string());
         let clip_name2 = find_model(&models.clip, &["jina"])
             .unwrap_or_else(|| "jina-clip-v2.safetensors".to_string());
+        let vae_name = find_model(&models.vae, &["newbie", "diffusion_pytorch"])
+            .unwrap_or_else(|| "newbie-image.safetensors".to_string());
 
         // Build the prompt prefix for newbie model
         let positive_prompt = format!(
@@ -351,7 +368,7 @@ impl ComfyUIClient {
             },
             "5": {
                 "inputs": {
-                    "vae_name": "diffusion_pytorch_model.safetensors"
+                    "vae_name": vae_name
                 },
                 "class_type": "VAELoader",
                 "_meta": {"title": "VAE加载器"}

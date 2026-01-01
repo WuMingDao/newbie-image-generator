@@ -1,0 +1,6 @@
+# UNet Model (主模型)
+# 请将以下模型文件放入此文件夹：
+
+# NewBie-image-v0.1-exp-ep9.safetensors (下载后请重命名)
+#    下载: https://hf-mirror.com/NewBie-AI/NewBie-image-Exp0.1/resolve/main/transformer/diffusion_pytorch_model.safetensors
+#    重命名为: NewBie-image-v0.1-exp-ep9.safetensors
