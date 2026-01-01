@@ -96,9 +96,11 @@ export function ImageGenerator() {
     return localStorage.getItem("caption") || "";
   });
   const [importedData, setImportedData] = useState<ParsedXML | null>(null);
+  const [structuredKey, setStructuredKey] = useState(0);
 
   const handleXMLImport = (data: ParsedXML) => {
     setImportedData(data);
+    setStructuredKey((prev) => prev + 1);
     if (data.caption) {
       setCaption(data.caption);
     }
@@ -473,6 +475,7 @@ export function ImageGenerator() {
 
               <TabsContent value="structured" className="mt-4">
                 <StructuredPrompt
+                  key={structuredKey}
                   onPromptChange={setStructuredPrompt}
                   caption={caption}
                   importedData={importedData}

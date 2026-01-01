@@ -109,25 +109,35 @@ export function StructuredPrompt({
   importedData,
 }: StructuredPromptProps) {
   const [characters, setCharacters] = useState<Character[]>(() => {
+    if (importedData?.characters?.length) {
+      return importedData.characters;
+    }
     const saved = localStorage.getItem("structuredCharacters");
     if (saved) {
       try {
         return JSON.parse(saved);
-      } catch {}
+      } catch {
+        // Ignore invalid saved JSON.
+      }
     }
     return [createEmptyCharacter(1)];
   });
   const [generalTags, setGeneralTags] = useState<GeneralTags>(() => {
+    if (importedData?.generalTags) {
+      return importedData.generalTags;
+    }
     const saved = localStorage.getItem("structuredGeneralTags");
     if (saved) {
       try {
         return JSON.parse(saved);
-      } catch {}
+      } catch {
+        // Ignore invalid saved JSON.
+      }
     }
     return defaultGeneralTags;
   });
 
-  // 保存到 localStorage
+  // Save to localStorage.
   useEffect(() => {
     localStorage.setItem("structuredCharacters", JSON.stringify(characters));
   }, [characters]);
@@ -136,25 +146,9 @@ export function StructuredPrompt({
     localStorage.setItem("structuredGeneralTags", JSON.stringify(generalTags));
   }, [generalTags]);
 
-  const updateAndNotify = (newChars: Character[], newTags: GeneralTags) => {
-    onPromptChange(generateXML(newChars, newTags, caption));
-  };
-
-  // 当 caption 变化时更新
   useEffect(() => {
     onPromptChange(generateXML(characters, generalTags, caption));
-  }, [caption]);
-
-  // 当外部导入数据时填充
-  useEffect(() => {
-    if (importedData) {
-      setCharacters(importedData.characters);
-      setGeneralTags(importedData.generalTags);
-      onPromptChange(
-        generateXML(importedData.characters, importedData.generalTags, caption),
-      );
-    }
-  }, [importedData]);
+  }, [characters, generalTags, caption, onPromptChange]);
 
   const updateCharacter = (
     id: number,
@@ -165,7 +159,6 @@ export function StructuredPrompt({
       c.id === id ? { ...c, [field]: value } : c,
     );
     setCharacters(newChars);
-    updateAndNotify(newChars, generalTags);
   };
 
   const addCharacter = () => {
@@ -174,20 +167,17 @@ export function StructuredPrompt({
       createEmptyCharacter(characters.length + 1),
     ];
     setCharacters(newChars);
-    updateAndNotify(newChars, generalTags);
   };
 
   const removeCharacter = (id: number) => {
     if (characters.length <= 1) return;
     const newChars = characters.filter((c) => c.id !== id);
     setCharacters(newChars);
-    updateAndNotify(newChars, generalTags);
   };
 
   const updateGeneralTag = (field: keyof GeneralTags, value: string) => {
     const newTags = { ...generalTags, [field]: value };
     setGeneralTags(newTags);
-    updateAndNotify(characters, newTags);
   };
 
   return (
