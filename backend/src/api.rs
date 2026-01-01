@@ -25,14 +25,26 @@ pub struct AppState {
 
 /// Create the API router
 pub fn create_router(state: AppState) -> Router {
-    // Serve frontend static files from ./dist directory
-    let serve_dir = ServeDir::new("dist").fallback(ServeFile::new("dist/index.html"));
+    // Serve frontend static files - check both ./dist and ./frontend/dist
+    let dist_path = if std::path::Path::new("dist").exists() {
+        "dist"
+    } else if std::path::Path::new("frontend/dist").exists() {
+        "frontend/dist"
+    } else {
+        "dist" // fallback
+    };
+    let index_path = format!("{}/index.html", dist_path);
+    let serve_dir = ServeDir::new(dist_path).fallback(ServeFile::new(&index_path));
 
     Router::new()
         // Health and status endpoints
         .route("/health", get(health_handler))
         .route("/api/status", get(status_handler))
         .route("/api/test-comfyui", post(test_comfyui_handler))
+        .route(
+            "/api/comfyui-url",
+            get(get_comfyui_url_handler).post(set_comfyui_url_handler),
+        )
         // Generation endpoints
         .route("/api/generate", post(generate_handler))
         .route("/api/queue", get(queue_handler))
@@ -80,6 +92,26 @@ async fn test_comfyui_handler(Json(request): Json<TestComfyUIRequest>) -> Json<s
         Ok(resp) if resp.status().is_success() => Json(serde_json::json!({ "success": true })),
         _ => Json(serde_json::json!({ "success": false })),
     }
+}
+
+async fn get_comfyui_url_handler(State(state): State<AppState>) -> Json<serde_json::Value> {
+    let url = state.comfyui.get_url().await;
+    Json(serde_json::json!({ "url": url }))
+}
+
+#[derive(Deserialize)]
+struct SetComfyUIUrlRequest {
+    url: String,
+}
+
+async fn set_comfyui_url_handler(
+    State(state): State<AppState>,
+    Json(request): Json<SetComfyUIUrlRequest>,
+) -> Json<serde_json::Value> {
+    let url = request.url.trim_end_matches('/');
+    state.comfyui.set_url(url).await;
+    tracing::info!("ComfyUI URL updated to: {}", url);
+    Json(serde_json::json!({ "success": true, "url": url }))
 }
 
 async fn status_handler(State(state): State<AppState>) -> AppResult<Json<serde_json::Value>> {
@@ -344,11 +376,11 @@ pub async fn start_comfyui_listener(
     event_tx: broadcast::Sender<String>,
     client_id: String,
 ) {
-    let ws_url = format!("{}?clientId={}", comfyui.ws_url(), client_id);
     let api_base = comfyui.public_base_url().to_string();
 
     loop {
-        tracing::info!("Connecting to ComfyUI WebSocket: {}", ws_url);
+        // Get current WebSocket URL (may have changed)
+        let ws_url = format!("{}?clientId={}", comfyui.ws_url().await, client_id);
 
         match tokio_tungstenite::connect_async(&ws_url).await {
             Ok((ws_stream, _)) => {
@@ -404,7 +436,7 @@ pub async fn start_comfyui_listener(
                             }
                         }
                         Err(e) => {
-                            tracing::error!("ComfyUI WebSocket error: {}", e);
+                            tracing::debug!("ComfyUI WebSocket error: {}", e);
                             break;
                         }
                         _ => {}
@@ -412,11 +444,11 @@ pub async fn start_comfyui_listener(
                 }
             }
             Err(e) => {
-                tracing::error!("Failed to connect to ComfyUI WebSocket: {}", e);
+                tracing::debug!("ComfyUI WebSocket not available: {}", e);
             }
         }
 
-        tracing::info!("ComfyUI WebSocket disconnected, reconnecting in 5 seconds...");
+        tracing::debug!("ComfyUI WebSocket disconnected, reconnecting in 5 seconds...");
         tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
     }
 }

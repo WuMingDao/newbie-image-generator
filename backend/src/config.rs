@@ -1,4 +1,24 @@
 use std::env;
+use std::sync::Arc;
+use tokio::sync::RwLock;
+
+/// Dynamic ComfyUI configuration that can be updated at runtime
+#[derive(Debug, Clone)]
+pub struct ComfyUIConfig {
+    pub url: String,
+    pub ws_url: String,
+}
+
+impl ComfyUIConfig {
+    pub fn new(url: &str) -> Self {
+        let url = url.trim_end_matches('/').to_string();
+        let ws_url = url
+            .replace("http://", "ws://")
+            .replace("https://", "wss://")
+            + "/ws";
+        Self { url, ws_url }
+    }
+}
 
 /// Application configuration loaded from environment variables
 #[derive(Debug, Clone)]
@@ -8,10 +28,8 @@ pub struct Config {
     pub host: String,
     /// Server port
     pub port: u16,
-    /// ComfyUI server URL
-    pub comfyui_url: String,
-    /// ComfyUI WebSocket URL
-    pub comfyui_ws_url: String,
+    /// ComfyUI configuration (dynamic)
+    pub comfyui: Arc<RwLock<ComfyUIConfig>>,
     /// Public base URL for this backend (used in image URLs)
     pub public_base_url: String,
     /// Allowed CORS origins
@@ -31,9 +49,8 @@ impl Config {
 
         let comfyui_host = env::var("COMFYUI_HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
         let comfyui_port = env::var("COMFYUI_PORT").unwrap_or_else(|_| "8188".to_string());
-
         let comfyui_url = format!("http://{}:{}", comfyui_host, comfyui_port);
-        let comfyui_ws_url = format!("ws://{}:{}/ws", comfyui_host, comfyui_port);
+
         let public_base_url = env::var("PUBLIC_BASE_URL")
             .unwrap_or_else(|_| format!("http://localhost:{}", port))
             .trim_end_matches('/')
@@ -48,8 +65,7 @@ impl Config {
         Self {
             host,
             port,
-            comfyui_url,
-            comfyui_ws_url,
+            comfyui: Arc::new(RwLock::new(ComfyUIConfig::new(&comfyui_url))),
             public_base_url,
             cors_origins,
         }

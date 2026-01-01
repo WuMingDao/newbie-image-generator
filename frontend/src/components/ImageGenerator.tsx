@@ -53,19 +53,32 @@ const DEFAULT_SYSTEM_PROMPT =
   "You are the greatest anime artist in the entire universe. Your figures are always clear, especially in facial detail. Your compositions always adhere to the golden ratio. Your perspectives are perfectly chosen. The scenes in your works always fit the setting. Your lighting is particularly atmospheric.Now draw a picture based on the prompts below.You are an assistant designed to generate anime images based on xml format textual prompts.";
 
 export function ImageGenerator() {
-  const [params, setParams] = useState<GenerationParams>({
-    prompt: "",
-    negativePrompt: DEFAULT_NEGATIVE_PROMPT,
-    steps: 28,
-    cfgScale: 4.5,
-    width: 1024,
-    height: 1536,
-    seed: -1,
-    samplerName: "res_multistep",
-    scheduler: "linear_quadratic",
-    hifixEnabled: false,
-    hifixSteps: 20,
-    hifixCfg: 7,
+  const [params, setParams] = useState<GenerationParams>(() => {
+    const saved = localStorage.getItem("generationParams");
+    if (saved) {
+      try {
+        return {
+          ...JSON.parse(saved),
+          negativePrompt: DEFAULT_NEGATIVE_PROMPT,
+        };
+      } catch {
+        // ignore
+      }
+    }
+    return {
+      prompt: "",
+      negativePrompt: DEFAULT_NEGATIVE_PROMPT,
+      steps: 28,
+      cfgScale: 4.5,
+      width: 1024,
+      height: 1536,
+      seed: -1,
+      samplerName: "res_multistep",
+      scheduler: "linear_quadratic",
+      hifixEnabled: false,
+      hifixSteps: 20,
+      hifixCfg: 7,
+    };
   });
 
   const [promptMode, setPromptMode] = useState<"normal" | "structured">(() => {
@@ -99,6 +112,9 @@ export function ImageGenerator() {
   const [generatedImages, setGeneratedImages] = useState<ImageResult[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [comfyuiUrl, setComfyuiUrlState] = useState(getComfyUIUrl());
+  const [comfyuiConnected, setComfyuiConnected] = useState<boolean | null>(
+    null,
+  );
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [testingConnection, setTestingConnection] = useState(false);
   const [testResult, setTestResult] = useState<"success" | "error" | null>(
@@ -118,9 +134,42 @@ export function ImageGenerator() {
     localStorage.setItem("caption", caption);
   }, [caption]);
 
-  const handleComfyUIUrlChange = (url: string) => {
+  useEffect(() => {
+    localStorage.setItem("generationParams", JSON.stringify(params));
+  }, [params]);
+
+  // Sync ComfyUI URL with backend on mount
+  useEffect(() => {
+    const syncUrl = async () => {
+      try {
+        const localUrl = getComfyUIUrl();
+        await api.setComfyUIUrl(localUrl);
+      } catch {
+        // Backend might not be available yet
+      }
+    };
+    syncUrl();
+  }, []);
+
+  const checkComfyUIHealth = useCallback(async () => {
+    try {
+      const health = await api.health();
+      setComfyuiConnected(health.comfyui);
+    } catch {
+      setComfyuiConnected(false);
+    }
+  }, []);
+
+  const handleComfyUIUrlChange = async (url: string) => {
     setComfyuiUrlState(url);
     setComfyUIUrl(url);
+    // Sync with backend
+    try {
+      await api.setComfyUIUrl(url);
+      await checkComfyUIHealth();
+    } catch {
+      // Ignore errors - backend might not be available yet
+    }
   };
 
   const handleTestConnection = async () => {
@@ -134,8 +183,10 @@ export function ImageGenerator() {
       }
       const result = await api.testComfyUI(url);
       setTestResult(result.success ? "success" : "error");
+      setComfyuiConnected(result.success);
     } catch {
       setTestResult("error");
+      setComfyuiConnected(false);
     } finally {
       setTestingConnection(false);
       setTimeout(() => setTestResult(null), 3000);
@@ -179,6 +230,14 @@ export function ImageGenerator() {
   const { isConnected } = useWebSocket({
     onMessage: handleWSMessage,
   });
+
+  useEffect(() => {
+    checkComfyUIHealth();
+    const interval = window.setInterval(() => {
+      checkComfyUIHealth();
+    }, 5000);
+    return () => window.clearInterval(interval);
+  }, [checkComfyUIHealth]);
 
   // 构建最终 prompt
   const buildFinalPrompt = (): string => {
@@ -343,7 +402,17 @@ export function ImageGenerator() {
                   <div
                     className={`w-2 h-2 rounded-full ${isConnected ? "bg-green-500" : "bg-red-500"}`}
                   />
-                  {isConnected ? "已连接服务器" : "未连接"}
+                  {isConnected ? "已连接后端" : "后端未连接"}
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <div
+                    className={`w-2 h-2 rounded-full ${comfyuiConnected ? "bg-green-500" : "bg-red-500"}`}
+                  />
+                  {comfyuiConnected === null
+                    ? "ComfyUI 检测中"
+                    : comfyuiConnected
+                      ? "ComfyUI 已连接"
+                      : "ComfyUI 未连接"}
                 </div>
                 <div className="space-y-2">
                   <Label>ComfyUI URL</Label>
@@ -671,7 +740,8 @@ export function ImageGenerator() {
               !(promptMode === "normal"
                 ? params.prompt.trim()
                 : structuredPrompt.trim()) ||
-              !isConnected
+              !isConnected ||
+              comfyuiConnected === false
             }
           >
             {isGenerating ? (

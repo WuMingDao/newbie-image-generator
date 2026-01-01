@@ -26,14 +26,13 @@ impl ComfyUIClient {
     }
 
     /// Get the base URL for ComfyUI
-    #[allow(dead_code)]
-    pub fn base_url(&self) -> &str {
-        &self.config.comfyui_url
+    pub async fn base_url(&self) -> String {
+        self.config.comfyui.read().await.url.clone()
     }
 
     /// Get the WebSocket URL for ComfyUI
-    pub fn ws_url(&self) -> &str {
-        &self.config.comfyui_ws_url
+    pub async fn ws_url(&self) -> String {
+        self.config.comfyui.read().await.ws_url.clone()
     }
 
     /// Get the public base URL for this backend
@@ -41,9 +40,21 @@ impl ComfyUIClient {
         &self.config.public_base_url
     }
 
+    /// Update ComfyUI URL
+    pub async fn set_url(&self, url: &str) {
+        let mut comfyui = self.config.comfyui.write().await;
+        *comfyui = crate::config::ComfyUIConfig::new(url);
+    }
+
+    /// Get current ComfyUI URL
+    pub async fn get_url(&self) -> String {
+        self.config.comfyui.read().await.url.clone()
+    }
+
     /// Check if ComfyUI is reachable
     pub async fn health_check(&self) -> AppResult<bool> {
-        let url = format!("{}/system_stats", self.config.comfyui_url);
+        let base_url = self.base_url().await;
+        let url = format!("{}/system_stats", base_url);
         match self.client.get(&url).send().await {
             Ok(resp) => Ok(resp.status().is_success()),
             Err(_) => Ok(false),
@@ -52,7 +63,7 @@ impl ComfyUIClient {
 
     /// Get system stats from ComfyUI
     pub async fn get_system_stats(&self) -> AppResult<SystemStats> {
-        let url = format!("{}/system_stats", self.config.comfyui_url);
+        let url = format!("{}/system_stats", self.base_url().await);
         let resp = self.client.get(&url).send().await?;
 
         if !resp.status().is_success() {
@@ -69,7 +80,7 @@ impl ComfyUIClient {
 
     /// Get queue status
     pub async fn get_queue(&self) -> AppResult<QueueStatus> {
-        let url = format!("{}/queue", self.config.comfyui_url);
+        let url = format!("{}/queue", self.base_url().await);
         let resp = self.client.get(&url).send().await?;
 
         if !resp.status().is_success() {
@@ -90,7 +101,7 @@ impl ComfyUIClient {
         workflow: Value,
         client_id: Option<String>,
     ) -> AppResult<ComfyUIPromptResponse> {
-        let url = format!("{}/prompt", self.config.comfyui_url);
+        let url = format!("{}/prompt", self.base_url().await);
 
         let request = ComfyUIPromptRequest {
             prompt: workflow,
@@ -114,7 +125,7 @@ impl ComfyUIClient {
 
     /// Get history for a specific prompt
     pub async fn get_history(&self, prompt_id: &str) -> AppResult<Option<PromptHistory>> {
-        let prompt_url = format!("{}/history/{}", self.config.comfyui_url, prompt_id);
+        let prompt_url = format!("{}/history/{}", self.base_url().await, prompt_id);
         let resp = self.client.get(&prompt_url).send().await?;
 
         if resp.status() == reqwest::StatusCode::NOT_FOUND {
@@ -153,7 +164,7 @@ impl ComfyUIClient {
     }
 
     async fn get_history_from_all(&self, prompt_id: &str) -> AppResult<Option<PromptHistory>> {
-        let url = format!("{}/history", self.config.comfyui_url);
+        let url = format!("{}/history", self.base_url().await);
         let resp = self.client.get(&url).send().await?;
 
         if !resp.status().is_success() {
@@ -187,7 +198,10 @@ impl ComfyUIClient {
     ) -> AppResult<Vec<u8>> {
         let url = format!(
             "{}/view?filename={}&subfolder={}&type={}",
-            self.config.comfyui_url, filename, subfolder, image_type
+            self.base_url().await,
+            filename,
+            subfolder,
+            image_type
         );
 
         let resp = self.client.get(&url).send().await?;
@@ -207,7 +221,7 @@ impl ComfyUIClient {
 
     /// Cancel the current execution
     pub async fn interrupt(&self) -> AppResult<()> {
-        let url = format!("{}/interrupt", self.config.comfyui_url);
+        let url = format!("{}/interrupt", self.base_url().await);
         let resp = self.client.post(&url).send().await?;
 
         if !resp.status().is_success() {
@@ -222,7 +236,7 @@ impl ComfyUIClient {
 
     /// Clear the queue
     pub async fn clear_queue(&self) -> AppResult<()> {
-        let url = format!("{}/queue", self.config.comfyui_url);
+        let url = format!("{}/queue", self.base_url().await);
         let resp = self
             .client
             .post(&url)
@@ -242,7 +256,7 @@ impl ComfyUIClient {
 
     /// Get available models from ComfyUI
     pub async fn get_available_models(&self) -> AppResult<AvailableModels> {
-        let url = format!("{}/object_info", self.config.comfyui_url);
+        let url = format!("{}/object_info", self.base_url().await);
         let resp = self.client.get(&url).send().await?;
 
         if !resp.status().is_success() {

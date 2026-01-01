@@ -28,25 +28,15 @@ async fn main() {
 
     // Load configuration
     let config = Arc::new(Config::from_env());
-    tracing::info!("Configuration loaded");
-    tracing::info!("ComfyUI URL: {}", config.comfyui_url);
 
     // Create ComfyUI client
     let comfyui = ComfyUIClient::new(config.clone());
-
-    // Check ComfyUI connection
-    match comfyui.health_check().await {
-        Ok(true) => tracing::info!("ComfyUI is reachable"),
-        Ok(false) => tracing::warn!("ComfyUI is not responding"),
-        Err(e) => tracing::warn!("Failed to check ComfyUI: {}", e),
-    }
 
     // Create event broadcast channel
     let (event_tx, _) = broadcast::channel::<String>(100);
 
     // Create application state
     let comfyui_client_id = uuid::Uuid::new_v4().to_string();
-    tracing::info!("ComfyUI client_id: {}", comfyui_client_id);
 
     let state = AppState {
         comfyui: comfyui.clone(),
@@ -80,22 +70,23 @@ async fn main() {
 
     // Start server
     let addr = config.server_addr();
+    let port = config.port;
     let listener = TcpListener::bind(&addr)
         .await
         .expect("Failed to bind listener");
 
-    tracing::info!("Server listening on http://{}", addr);
-    tracing::info!("API endpoints:");
-    tracing::info!("  GET  /            - API info");
-    tracing::info!("  GET  /health      - Health check");
-    tracing::info!("  GET  /api/status  - System status");
-    tracing::info!("  POST /api/generate - Generate image");
-    tracing::info!("  GET  /api/queue   - Queue status");
-    tracing::info!("  GET  /api/history/{{prompt_id}} - Get history");
-    tracing::info!("  GET  /api/images/{{filename}} - Get image");
-    tracing::info!("  POST /api/interrupt - Interrupt execution");
-    tracing::info!("  POST /api/clear   - Clear queue");
-    tracing::info!("  WS   /ws          - WebSocket events");
+    let url = format!("http://localhost:{}", port);
+    tracing::info!("Server running at {}", url);
+
+    // Open browser
+    #[cfg(target_os = "windows")]
+    let _ = std::process::Command::new("cmd")
+        .args(["/C", "start", &url])
+        .spawn();
+    #[cfg(target_os = "macos")]
+    let _ = std::process::Command::new("open").arg(&url).spawn();
+    #[cfg(target_os = "linux")]
+    let _ = std::process::Command::new("xdg-open").arg(&url).spawn();
 
     axum::serve(listener, app).await.expect("Server crashed");
 }

@@ -93,6 +93,19 @@ export const api = {
       body: JSON.stringify({ url }),
     });
   },
+
+  // Get ComfyUI URL from backend
+  async getComfyUIUrl(): Promise<{ url: string }> {
+    return request("/comfyui-url");
+  },
+
+  // Set ComfyUI URL on backend
+  async setComfyUIUrl(url: string): Promise<{ success: boolean; url: string }> {
+    return request("/comfyui-url", {
+      method: "POST",
+      body: JSON.stringify({ url }),
+    });
+  },
 };
 
 export { ApiError };

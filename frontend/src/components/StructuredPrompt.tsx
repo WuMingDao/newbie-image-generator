@@ -108,11 +108,33 @@ export function StructuredPrompt({
   caption,
   importedData,
 }: StructuredPromptProps) {
-  const [characters, setCharacters] = useState<Character[]>([
-    createEmptyCharacter(1),
-  ]);
-  const [generalTags, setGeneralTags] =
-    useState<GeneralTags>(defaultGeneralTags);
+  const [characters, setCharacters] = useState<Character[]>(() => {
+    const saved = localStorage.getItem("structuredCharacters");
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {}
+    }
+    return [createEmptyCharacter(1)];
+  });
+  const [generalTags, setGeneralTags] = useState<GeneralTags>(() => {
+    const saved = localStorage.getItem("structuredGeneralTags");
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {}
+    }
+    return defaultGeneralTags;
+  });
+
+  // 保存到 localStorage
+  useEffect(() => {
+    localStorage.setItem("structuredCharacters", JSON.stringify(characters));
+  }, [characters]);
+
+  useEffect(() => {
+    localStorage.setItem("structuredGeneralTags", JSON.stringify(generalTags));
+  }, [generalTags]);
 
   const updateAndNotify = (newChars: Character[], newTags: GeneralTags) => {
     onPromptChange(generateXML(newChars, newTags, caption));

@@ -11,6 +11,9 @@ backend/target/
 frontend/dist/
 frontend/node_modules/
 
+# Executables
+*.exe
+
 # Temp files
 *.tmp
 *.log
@@ -21,6 +24,8 @@ cargo_tmp.txt
 webapp-frontend-backup/
 webapp-frontend/
 Page/
+dist/
+models/
 
 # Archives
 *.zip
