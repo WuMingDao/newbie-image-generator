@@ -45,8 +45,7 @@
 
 ## 前置条件
 
-- **ComfyUI**: 需要 0.7.0 或更高版本
-- **ComfyUI-NewBie 节点**: 必须安装 [ComfyUI-NewBie](https://github.com/E-Anlia/ComfyUI-NewBie) 自定义节点
+- **ComfyUI**: 需要 0.7.0 或更高版本（已内置 NewBie 节点支持）
 - **NewBie image Exp0.1 模型**: 需要下载完整模型文件（见下方"准备模型"部分）
 
 ## 快速开始
