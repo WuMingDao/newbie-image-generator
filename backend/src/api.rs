@@ -8,6 +8,7 @@ use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
 use futures::{SinkExt, StreamExt};
 use serde::Deserialize;
 use tokio::sync::broadcast;
+use tower_http::services::{ServeDir, ServeFile};
 use uuid::Uuid;
 
 use crate::comfyui::ComfyUIClient;
@@ -24,9 +25,11 @@ pub struct AppState {
 
 /// Create the API router
 pub fn create_router(state: AppState) -> Router {
+    // Serve frontend static files from ./dist directory
+    let serve_dir = ServeDir::new("dist").fallback(ServeFile::new("dist/index.html"));
+
     Router::new()
         // Health and status endpoints
-        .route("/", get(root_handler))
         .route("/health", get(health_handler))
         .route("/api/status", get(status_handler))
         .route("/api/test-comfyui", post(test_comfyui_handler))
@@ -42,29 +45,13 @@ pub fn create_router(state: AppState) -> Router {
         // WebSocket endpoint
         .route("/ws", get(websocket_handler))
         .with_state(state)
+        // Fallback to serve static files (frontend)
+        .fallback_service(serve_dir)
 }
 
 // ============================================================================
 // Health and Status Handlers
 // ============================================================================
-
-async fn root_handler() -> impl IntoResponse {
-    Json(serde_json::json!({
-        "name": "ComfyUI Backend API",
-        "version": "0.1.0",
-        "endpoints": {
-            "health": "/health",
-            "status": "/api/status",
-            "generate": "POST /api/generate",
-            "queue": "/api/queue",
-            "history": "/api/history/{prompt_id}",
-            "images": "/api/images/{filename}",
-            "interrupt": "POST /api/interrupt",
-            "clear": "POST /api/clear",
-            "websocket": "/ws"
-        }
-    }))
-}
 
 async fn health_handler(State(state): State<AppState>) -> AppResult<Json<serde_json::Value>> {
     let comfyui_ok = state.comfyui.health_check().await?;

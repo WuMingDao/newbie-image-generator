@@ -2,9 +2,9 @@
 AGENTS.md
 CLAUDE.md
 
-# Environment files
+# Environment files (keep .example)
 .env
-.env.*
+!.env.example
 
 # Build outputs
 backend/target/

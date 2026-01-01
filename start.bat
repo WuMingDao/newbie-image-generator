@@ -1,3 +1,8 @@
 @echo off
-start "Backend" cmd /k "cd backend && cargo run"
-start "Frontend" cmd /k "cd frontend && bun run dev"
+echo Starting ComfyUI Image Generator...
+echo.
+echo Make sure ComfyUI is running on http://127.0.0.1:8188
+echo.
+cd /d "%~dp0"
+backend.exe
+pause
